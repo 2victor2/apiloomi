@@ -1,11 +1,15 @@
-from rest_framework import serializers
+from django.contrib.auth.models import User
 from .models import Filme
+from rest_framework import serializers
 
 class FilmeSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
     class Meta:
         model = Filme
         fields = [
             "id",
+            "usuario",
             "titulo",
             "descricao",
             "link_imagem",
@@ -20,6 +24,8 @@ class FilmeSerializer(serializers.ModelSerializer):
             "status",
         ]
 
+        read_only_fields = ["usuario"]
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation["diretores"] = instance.diretores.split(", ")
@@ -27,3 +33,7 @@ class FilmeSerializer(serializers.ModelSerializer):
         representation["atores"] = instance.atores.split(", ")
         representation["generos"] = instance.generos.split(", ")
         return representation
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=255)

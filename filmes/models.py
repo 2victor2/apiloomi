@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -11,12 +12,13 @@ class UserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
 
-        # Verificar a unicidade do email (exceto para registros com email em branco)
+        # Email único
         if User.objects.exclude(pk=user.pk).filter(email=user.email).exists():
             raise ValidationError('Este email já está em uso.')
 
         user.save(using=self._db)
         return user
+
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, blank=True, null=True)
@@ -39,6 +41,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+
 class Filme(models.Model):
     titulo = models.CharField(max_length=120)
     descricao = models.TextField(max_length=1200, blank=True, null=True)
@@ -53,5 +56,12 @@ class Filme(models.Model):
     atores = models.CharField(max_length=320, blank=True, null=True, default="")
     generos = models.CharField(max_length=320, blank=True, null=True, default="")
 
-    def __str__(self):
-        return self.titulo
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ['titulo']
+
+    @property
+    def criador(self):
+        return self.usuario
+

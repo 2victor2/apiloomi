@@ -11,8 +11,6 @@ class FilmeListCreateAPIView(generics.ListCreateAPIView):
     authentication_classes = [authentication.SessionAuthentication, authentication.TokenAuthentication]
     permission_classes = [permissions.DjangoModelPermissions]
 
-
-
 class FilmeDetailAPIView(mixins.RetrieveModelMixin, generics.GenericAPIView):
     queryset = Filme.objects.all()
     serializer_class = FilmeSerializer
