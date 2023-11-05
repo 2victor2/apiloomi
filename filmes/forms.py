@@ -18,3 +18,7 @@ class FilmeForm(forms.ModelForm):
             'favorito',
             'status',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['csrfmiddlewaretoken'] = forms.CharField(widget=forms.HiddenInput())

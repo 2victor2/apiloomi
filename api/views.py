@@ -1,5 +1,3 @@
-from rest_framework import permissions  # Add this import
-
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -7,9 +5,11 @@ from filmes.models import Filme
 from filmes.serializers import FilmeSerializer, LoginSerializer
 from rest_framework import generics
 from django.contrib.auth import authenticate, login
+from rest_framework.permissions import AllowAny
+from django.shortcuts import render
 
 class LoginView(generics.CreateAPIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -18,12 +18,10 @@ class LoginView(generics.CreateAPIView):
 
         user = authenticate(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
 
-        # Se o usuário existir, faça login e retorne um sucesso.
         if user is not None:
             login(request, user)
             return Response({'status': 'success', 'message': 'Login realizado com sucesso'})
 
-        # Se o usuário não existir, crie uma nova conta e faça login.
         else:
             user = User.objects.create_user(
                 username=serializer.validated_data['username'],
@@ -31,6 +29,8 @@ class LoginView(generics.CreateAPIView):
             )
             login(request, user)
             return Response({'status': 'success', 'message': 'Conta criada com sucesso'})
+
+
 
 @api_view(['POST'])
 def api_home(request, *args, **kwargs):

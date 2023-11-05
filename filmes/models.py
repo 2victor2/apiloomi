@@ -27,13 +27,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     imagem_perfil = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
-    # Adicione o campo de senha com um valor padrão seguro
+    # Adicionar senha com valor seguro
     password = models.CharField(max_length=128, default=make_password('temporary_password'))
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['nome']
+    
+    can_create_filme = models.BooleanField(default=False)
+    can_update_filme = models.BooleanField(default=False)
+    can_delete_filme = models.BooleanField(default=False)
+
 
     groups = models.ManyToManyField(Group, related_name='usuarios')
     user_permissions = models.ManyToManyField(Permission, related_name='usuarios_permissions')
