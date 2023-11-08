@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "apiloomi"
+version = "0.1.0"
+description = ""
+authors = ["Victor Ramon <91630027+2victor2@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = "^4.2.7"
+dj-database-url = "^2.1.0"
+psycopg2-binary = "^2.9.9"
+whitenoise = {extras = ["brotli"], version = "^6.6.0"}
+gunicorn = "^21.2.0"
+djangorestframework = "^3.14.0"
+pillow = "^10.1.0"
+python-decouple = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
