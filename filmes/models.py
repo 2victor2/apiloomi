@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 
+import uuid
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -21,6 +23,7 @@ class UserManager(BaseUserManager):
 
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
+    uuid = models.UUIDField(default=uuid.uuid4)
     email = models.EmailField(unique=True, blank=True, null=True)
     nome = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)

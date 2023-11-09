@@ -1,5 +1,4 @@
-from django.contrib.auth.models import User
-from .models import Filme
+from .models import Filme, User
 from rest_framework import serializers
 
 class FilmeSerializer(serializers.ModelSerializer):
@@ -37,3 +36,8 @@ class FilmeSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255)
     password = serializers.CharField(max_length=255)
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"

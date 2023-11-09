@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from filmes.models import Filme
-from filmes.serializers import FilmeSerializer, LoginSerializer
+from filmes.serializers import FilmeSerializer, LoginSerializer, UserSerializer
 from rest_framework import generics
 from django.contrib.auth import authenticate, login
 from rest_framework.permissions import AllowAny
@@ -20,7 +20,7 @@ class LoginView(generics.CreateAPIView):
 
         if user is not None:
             login(request, user)
-            return Response({'status': 'success', 'message': 'Login realizado com sucesso'})
+            return Response(UserSerializer(user).data)
 
         else:
             user = User.objects.create_user(
@@ -28,7 +28,7 @@ class LoginView(generics.CreateAPIView):
                 password=serializer.validated_data['password'],
             )
             login(request, user)
-            return Response({'status': 'success', 'message': 'Conta criada com sucesso'})
+            return Response(UserSerializer(user).data)
 
 
 

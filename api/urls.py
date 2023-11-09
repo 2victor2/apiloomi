@@ -1,12 +1,15 @@
 from django.urls import path
-from rest_framework.authtoken.views import obtain_auth_token
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
 from . import views
 
 urlpatterns = [
-  path('', views.LoginView.as_view(), name='login'),
-  path('auth/', obtain_auth_token),
-  path('create-filme/', views.create_filme, name='create-filme'),
-  path('register-user/', views.register_user, name='register-user'),
-  path('api/', views.api_home),
+  path('login/', views.LoginView.as_view(), name='login'),
+  # path('create-filme/', views.create_filme, name='create-filme'),
+  # path('register-user/', views.register_user, name='register-user'),
+  # path('api/', views.api_home),
+  path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+  path('api/docs/', SpectacularSwaggerView.as_view(), name='docs'),
+
 ]
 
