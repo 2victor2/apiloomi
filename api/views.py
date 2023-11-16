@@ -1,12 +1,12 @@
-from django.contrib.auth.models import User
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from filmes.models import Filme
-from filmes.serializers import FilmeSerializer, LoginSerializer, UserSerializer
-from rest_framework import generics
-from django.contrib.auth import authenticate, login
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
-from django.shortcuts import render
+from rest_framework.response import Response
+from django.contrib.auth import authenticate, login
+from django.views.decorators.csrf import csrf_exempt
+
+from filmes.models import Filme, Usuario
+from filmes.serializers import LoginSerializer, UsuarioSerializer
+
 
 class LoginView(generics.CreateAPIView):
     permission_classes = [AllowAny]
@@ -20,51 +20,19 @@ class LoginView(generics.CreateAPIView):
 
         if user is not None:
             login(request, user)
-            return Response(UserSerializer(user).data)
+            return Response({'user_id': UsuarioSerializer(user).data['uuid']})
 
         else:
-            user = User.objects.create_user(
-                username=serializer.validated_data['username'],
-                password=serializer.validated_data['password'],
-            )
-            login(request, user)
-            return Response(UserSerializer(user).data)
+            try:
+                Usuario.objects.get(username=serializer.validated_data['username'])
 
+                return Response({'error': 'Credenciais inválidas'}, status=status.HTTP_400_BAD_REQUEST)
+            except Usuario.DoesNotExist:
+                user = Usuario.objects.create_user(
+                    username=serializer.validated_data['username'],
+                    password=serializer.validated_data['password'],
+                )
+                login(request, user)
+                return Response({'user_id': UsuarioSerializer(user).data['uuid']}, status=status.HTTP_201_CREATED)
 
-
-@api_view(['POST'])
-def api_home(request, *args, **kwargs):
-    if request.method == 'POST':
-        serializer = FilmeSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-@api_view(['POST'])
-def create_filme(request, *args, **kwargs):
-    if request.method == 'POST':
-        serializer = FilmeSerializer(data=request.data)
-        if serializer.is_valid():
-            title = serializer.validated_data.get('titulo')
-            content = serializer.validated_data.get('descricao') or None
-            if content is None:
-                content = title
-            serializer.save(content=content)
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-@api_view(['POST'])
-def register_user(request):
-    if request.method == 'POST':
-        data = request.data
-        if User.objects.filter(email=data.get('email')).exists():
-            return Response({"error": "E-mail já está em uso."}, status=400)
-
-        user = User.objects.create_user(
-            username=data.get('username'),
-            password=data.get('password'),
-            email=data.get('email')
-        )
-
-        return Response({"user_id": user.id}, status=201)
+LoginView.csrf_exempt = True

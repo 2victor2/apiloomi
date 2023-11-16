@@ -1,89 +1,45 @@
-from rest_framework import authentication, generics, mixins, permissions
-from rest_framework.decorators import api_view
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import generics, status
 from rest_framework.response import Response
+
 from .models import Filme
+from .permissions import IsExistingUserPermission
 from .serializers import FilmeSerializer
-from django.shortcuts import get_object_or_404
+
 
 class FilmeListCreateAPIView(generics.ListCreateAPIView):
     queryset = Filme.objects.all()
     serializer_class = FilmeSerializer
-    authentication_classes = [authentication.SessionAuthentication, authentication.TokenAuthentication]
-    permission_classes = [permissions.DjangoModelPermissions]
+    permission_classes = [IsExistingUserPermission]
+    detail=False
 
-class FilmeDetailAPIView(mixins.RetrieveModelMixin, generics.GenericAPIView):
+    def get_queryset(self):
+        filters = Q()
+
+        # Check if user_id is present in URL parameters
+        user_id = self.kwargs.get('user_id')
+
+        if user_id:
+            # Case: 'user/<str:user_id>/' path
+            filters &= Q(usuario__uuid=user_id)
+
+        return self.queryset.filter(filters).select_related("usuario")
+    
+    def create(self, request, *args, **kwargs):
+        data = self.request.data.copy()
+        data["usuario"] = self.request.user.id
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class FilmeDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Filme.objects.all()
     serializer_class = FilmeSerializer
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-class FilmeUpdateAPIView(generics.UpdateAPIView):
-    queryset = Filme.objects.all()
-    serializer_class = FilmeSerializer
-    lookup_field = 'pk'
-
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if not instance.content:
-            instance.content = instance.titulo
-
-class FilmeDestroyAPIView(generics.DestroyAPIView):
-    queryset = Filme.objects.all()
-    serializer_class = FilmeSerializer
-    lookup_field = 'pk'
-
-    def perform_destroy(self, instance):
-        super().perform_destroy(instance)
-
-@api_view(['GET', 'POST'])
-def filme_alt_view(request, pk=None, *args, **kwargs):
-    method = request.method
-
-    if method == "GET":
-        if pk is not None:
-            obj = get_object_or_404(Filme, pk=pk)
-            data = FilmeSerializer(obj, many=False).data
-            return Response(data)
-        # lista dos filmes
-        queryset = Filme.objects.all()
-        data = FilmeSerializer(queryset, many=True).data
-        return Response(data)
-
-    if method == "POST":
-        # postando filme
-        serializer = FilmeSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            titulo = serializer.validated_data.get('titulo')
-            descricao = serializer.validated_data.get('descricao') or None
-            if descricao is None:
-                descricao = titulo
-            serializer.save(descricao=descricao)
-            return Response(serializer.data)
-        return Response({"inválido": "adicione o dado no formato correto"}, status=400)
-
-class FilmeMixinView(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    generics.GenericAPIView
-):
-    queryset = Filme.objects.all()
-    serializer_class = FilmeSerializer
-    lookup_field = 'pk'
-
-    def get(self, request, *args, **kwargs):
-        pk = kwargs.get("pk")
-        if pk is not None:
-            return self.retrieve(request, *args, **kwargs)
-        return self.list(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-    def perform_create(self, serializer):
-        titulo = serializer.validated_data.get('titulo')
-        descricao = serializer.validated_data.get('descricao') or None
-        if descricao is None:
-            descricao = titulo
-        serializer.save(descricao=descricao)
+    permission_classes = [IsExistingUserPermission]
+    lookup_field = "uuid"
+    lookup_url_kwarg = "uuid"

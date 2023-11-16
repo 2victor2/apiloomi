@@ -4,39 +4,44 @@ from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 
 import uuid
+import unicodedata
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('O Email é obrigatório')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+    def normalize_username(cls, username):
+        return (
+            unicodedata.normalize("NFKC", username)
+            if isinstance(username, str)
+            else username
+        )
+
+    def create_user(self, username, password=None, **extra_fields):
+        if not username:
+            raise ValueError('O username é obrigatório')
+        username = self.normalize_username(username)
+        user = self.model(username=username, **extra_fields)
         user.set_password(password)
 
-        # Email único
-        if User.objects.exclude(pk=user.pk).filter(email=user.email).exists():
-            raise ValidationError('Este email já está em uso.')
+        # Username único
+        if Usuario.objects.exclude(pk=user.pk).filter(username=user.username).exists():
+            raise ValidationError('Este username já está em uso.')
 
         user.save(using=self._db)
         return user
 
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
-    uuid = models.UUIDField(default=uuid.uuid4)
-    email = models.EmailField(unique=True, blank=True, null=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    username = models.CharField(max_length=255, unique=True, blank=True, null=True)
     nome = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     imagem_perfil = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
-    # Adicionar senha com valor seguro
-    password = models.CharField(max_length=128, default=make_password('temporary_password'))
-
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['nome']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = []
     
     can_create_filme = models.BooleanField(default=False)
     can_update_filme = models.BooleanField(default=False)
@@ -47,10 +52,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     user_permissions = models.ManyToManyField(Permission, related_name='usuarios_permissions')
 
     def __str__(self):
-        return self.email
+        return self.username or 'User #%s' % self.pk
 
 
 class Filme(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     titulo = models.CharField(max_length=120)
     descricao = models.TextField(max_length=1200, blank=True, null=True)
     link_imagem = models.CharField(max_length=255, blank=True, null=True)
@@ -64,7 +70,7 @@ class Filme(models.Model):
     atores = models.CharField(max_length=320, blank=True, null=True, default="")
     generos = models.CharField(max_length=320, blank=True, null=True, default="")
 
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='filmes')
 
     class Meta:
         ordering = ['titulo']
