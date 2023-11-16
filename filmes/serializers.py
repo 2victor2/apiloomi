@@ -1,6 +1,31 @@
 from .models import Filme, Usuario
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 
+
+@extend_schema_serializer(
+    exclude_fields=('usuario',), # schema ignore these fields
+    examples = [
+         OpenApiExample(
+            'Exemplo de criação',
+            value={
+                "titulo": "string",
+                "descricao": "string",
+                "link_imagem": "string",
+                "data_de_lancamento": "2023-11-16",
+                "diretores": "string",
+                "roteiristas": "string",
+                "atores": "string",
+                "generos": "string",
+                "comentarios": "string",
+                "estrelas": 4,
+                "favorito": True,
+                "status": "string"
+            },
+            request_only=True, # signal that example only applies to requests
+        ),
+    ]
+)
 class FilmeSerializer(serializers.ModelSerializer):
 
     class Meta:

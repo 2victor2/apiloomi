@@ -5,9 +5,6 @@ from .views import (
 )
 
 urlpatterns = [
-    # Path for GET method with empty path (unauthenticated)
-    path('', FilmeListCreateAPIView.as_view(), name='filme-list'),
-
     # Path for POST and GET with the path user/<str:user_id>/ (auth)
     path('user/<str:user_id>/', FilmeListCreateAPIView.as_view(), name='filme-list-create'),
 
